@@ -3215,34 +3215,53 @@ async function toggleEditEncargado() {
     }
 }
 
-        async function guardarEdicionEncargado() {
-            const payload = {
-                usuario: currentUser.email,
-                id: document.getElementById('edit-enc-id-est').value,
-                nombre: document.getElementById('edit-enc-nombre').value,
-                cedulaEnc: document.getElementById('edit-enc-cedula').value,
-                parentesco: document.getElementById('edit-enc-parentesco').value,
-                telefono: document.getElementById('edit-enc-telefono').value
-            };
+ async function guardarEdicionEncargado() {
+    const payload = {
+        usuario: currentUser.email,
+        id: document.getElementById('edit-enc-id-est').value,
+        nombre: document.getElementById('edit-enc-nombre').value,
+        cedulaEnc: document.getElementById('edit-enc-cedula').value,
+        parentesco: document.getElementById('edit-enc-parentesco').value,
+        telefono: document.getElementById('edit-enc-telefono').value
+    };
 
-            const btn = document.querySelector('#footer-edit-encargado button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = "GUARDANDO...";
-            btn.disabled = true;
+    const btn = document.querySelector('#footer-edit-encargado button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "GUARDANDO...";
+    btn.disabled = true;
 
-            const res = await conectarAPI('actualizarEncargado', payload);
+    const res = await conectarAPI('actualizarEncargado', payload);
 
-            if(res.success) {
-                uiAlert("✅ Éxito", res.message, "success");
-                editModeEnc = true; 
-                toggleEditEncargado(); // Salir modo edición
-                buscarEstudianteAPI(); // Recargar datos
-            } else {
-                uiAlert("❌ Error", res.message, "error");
-            }
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
+    if(res.success) {
+        uiAlert("✅ Éxito", res.message, "success");
+        editModeEnc = false;          // 👈 CAMBIO: forzamos el estado a false directamente
+        salirModoEdicionEncargado();  // 👈 CAMBIO: nueva función "muda", sin confirmación
+        buscarEstudianteAPI();        // Recargar datos
+    } else {
+        uiAlert("❌ Error", res.message, "error");
+    }
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
+function salirModoEdicionEncargado() {
+    const form = document.getElementById('info-encargado-form');
+    if (!form) return;
+
+    const inputs = form.querySelectorAll('input:not([type="hidden"]), select, textarea');
+    const footer = document.getElementById('footer-edit-encargado');
+    const btn = document.getElementById('btn-edit-encargado');
+
+    inputs.forEach(input => {
+        input.disabled = true;
+        input.readOnly = true;
+        input.classList.add('bg-transparent', 'border-transparent', 'appearance-none');
+        input.classList.remove('bg-black/20', 'border-white/10');
+    });
+
+    footer.classList.add('hidden');
+    btn.classList.remove('bg-orange-600', 'text-white');
+}
 
         // --- DASHBOARD & GRÁFICOS ---     
 
