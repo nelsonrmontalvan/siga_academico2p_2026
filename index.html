@@ -4705,43 +4705,33 @@ function imprimirListaClase() {
     container.innerHTML = html;
     document.body.appendChild(container);
 
-    // Capa opaca que cubre toda la pantalla para que el usuario no vea
-    // el contenedor mientras se genera el PDF (pero el navegador SÍ
-    // le calcula tamaño real, a diferencia de esconderlo con top:-9999px)
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100vw';
-    overlay.style.height = '100vh';
-    overlay.style.background = '#0f172a';
-    overlay.style.zIndex = '99998';
-    overlay.innerHTML = '<p style="color:#fff; text-align:center; margin-top:45vh; font-family:Arial;">Generando PDF...</p>';
-    document.body.appendChild(overlay);
+    // 🔍 DIAGNÓSTICO: revisemos en consola qué tamaño tiene el contenedor
+    console.log("📏 Contenedor creado. offsetWidth:", container.offsetWidth, "offsetHeight:", container.offsetHeight);
+    console.log("📄 Contenido HTML (primeros 200 caracteres):", container.innerHTML.substring(0, 200));
 
     const opt = {
         margin: 0.4,
         filename: `Lista_Clase_${titulo}`.replace(/[^a-zA-Z0-9_-]/g, '_') + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: { scale: 2, useCORS: true, logging: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    // Proceso explícito paso a paso: solo eliminamos el contenedor
-    // DESPUÉS de que el PDF ya fue generado y guardado por completo.
-    setTimeout(() => {
-        html2pdf().set(opt).from(container).toPdf().get('pdf').then((pdfObj) => {
-            pdfObj.save(opt.filename);
-        }).then(() => {
-            document.body.removeChild(container);
-            document.body.removeChild(overlay);
-        }).catch((err) => {
-            console.error("Error generando PDF:", err);
-            uiAlert("❌ Error", "No se pudo generar el PDF: " + err.message, "error");
-            document.body.removeChild(container);
-            document.body.removeChild(overlay);
-        });
-    }, 300);
+    console.log("🚀 Iniciando html2pdf...");
+
+    html2pdf().set(opt).from(container).toCanvas().then((canvas) => {
+        console.log("🖼️ Canvas generado. Ancho:", canvas.width, "Alto:", canvas.height);
+        // Si el canvas tiene tamaño 0 o casi 0, ahí está el problema confirmado
+    }).then(() => {
+        return html2pdf().set(opt).from(container).save();
+    }).then(() => {
+        console.log("✅ PDF guardado.");
+        document.body.removeChild(container);
+    }).catch((err) => {
+        console.error("❌ Error generando PDF:", err);
+        uiAlert("❌ Error", "No se pudo generar el PDF: " + err.message, "error");
+        document.body.removeChild(container);
+    });
 }
 
 // --- FUNCIÓN PARA VER PERFIL RÁPIDO DESDE LA LISTA DE CLASE ---
