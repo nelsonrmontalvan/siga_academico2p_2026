@@ -1387,6 +1387,27 @@ body {
         </div>
     </div> </div>
 
+<!-- Modal Encargado NUEVO) -->
+    <div id="modal-ver-encargado" class="modal-overlay hidden fixed inset-0 z-[62] flex items-center justify-center p-4" onclick="closeModal('modal-ver-encargado')">
+
+    <div class="glass-panel bg-[#1e293b] w-full max-w-md rounded-2xl relative overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+
+        <div class="bg-orange-600/20 p-4 border-b border-orange-500/20 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-orange-100 flex items-center gap-2">
+                <span class="material-icons">family_restroom</span> Encargado del Estudiante
+            </h3>
+            <button onclick="closeModal('modal-ver-encargado')" class="text-orange-200 hover:text-white p-1 rounded hover:bg-white/10">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <div id="contenido-ver-encargado" class="p-8 grid grid-cols-1 gap-5 text-sm">
+            <p class="text-gray-400 text-center">Cargando...</p>
+        </div>
+    </div>
+</div>
+    
+
 <!-- ========================================== -->
     <!-- MODAL GLOBAL DE ALERTAS (DISEÑO TIPO IMAGEN 2) -->
     <!-- ========================================== -->
@@ -4587,28 +4608,140 @@ function renderizarTablaEstudiantes(lista, materia, seccion) {
             <td class="p-3 text-white font-bold text-center">${est.edad}</td>
             <td class="p-3 text-blue-300 font-mono text-[10px]">${est.telefonos}</td>
             <td class="p-3 text-center">
-                <button onclick="verPerfilRapido('${est.id}')" class="text-purple-400 hover:text-white bg-purple-500/10 hover:bg-purple-500 p-1.5 rounded transition" title="Ver Expediente">
-                    <span class="material-icons text-sm">visibility</span>
-                </button>
-            </td>
+    <div class="flex items-center justify-center gap-1">
+        <button onclick="verPerfilRapido('${est.id}')" ...>
+            <span class="material-icons text-sm">visibility</span>
+        </button>
+        <button onclick="verEncargadoRapido('${est.id}')" class="text-orange-400 hover:text-white bg-orange-500/10 hover:bg-orange-500 p-1.5 rounded transition" title="Ver Encargado">
+            <span class="material-icons text-sm">family_restroom</span>
+        </button>
+    </div>
+</td>
         `;
         tbody.appendChild(tr);
     });
 }
-       // 7. IMPRIMIR LISTA
+
+// =========================================================
+// REEMPLAZO de imprimirListaClase() — PDF limpio en blanco y negro
+// =========================================================
 function imprimirListaClase() {
-    const element = document.getElementById('resultado-lista-clase');
-    // Simple impresión de navegador o usar html2pdf si prefieres
-    // Para listas largas, html2pdf a veces corta mal las tablas.
-    // Sugerencia rápida:
+    const titulo = document.getElementById('titulo-lista-res')?.textContent || "Lista de Clase";
+    const conteo = document.getElementById('conteo-lista')?.textContent || "";
+    const filas = document.querySelectorAll('#tabla-estudiantes-clase tr');
+
+    if (filas.length === 0) {
+        uiAlert("❌ Error", "No hay estudiantes para imprimir.", "error");
+        return;
+    }
+
+    const filasHtml = [];
+    filas.forEach((tr) => {
+        // Si es la fila de "No hay estudiantes matriculados", la saltamos
+        if (tr.children.length < 7) return;
+
+        const numero = tr.children[0]?.textContent.trim() || "";
+        const id = tr.children[1]?.textContent.trim() || "";
+        const nombre = tr.children[2]?.textContent.trim() || "";
+        const fechaMat = tr.children[3]?.textContent.trim() || "";
+        const condicion = tr.children[4]?.textContent.trim() || "";
+        const edad = tr.children[5]?.textContent.trim() || "";
+        const telefonos = tr.children[6]?.textContent.trim() || "";
+
+        filasHtml.push(`
+            <tr>
+                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${numero}</td>
+                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${id}</td>
+                <td style="border:1px solid #999; padding:4px; font-size:9.5px;">${nombre}</td>
+                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${fechaMat}</td>
+                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${condicion}</td>
+                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${edad}</td>
+                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9px;">${telefonos}</td>
+            </tr>
+        `);
+    });
+
+    const fechaEmision = new Date().toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; color:#000; padding: 10px; width: 100%;">
+            <div style="text-align:center; margin-bottom: 12px;">
+                <h2 style="margin:0; font-size:15px;">LISTADO DE ESTUDIANTES</h2>
+                <p style="margin:4px 0; font-size:11px;">${titulo}</p>
+                <p style="margin:0; font-size:10px; color:#555;">${conteo}</p>
+            </div>
+
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background:#222; color:#fff;">
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">#</th>
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Identificación</th>
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Nombre Completo</th>
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">F. Matrícula</th>
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Condición</th>
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Edad</th>
+                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Teléfonos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filasHtml.join('')}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 25px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 9px; color: #555; text-align:center;">
+                Reporte generado por RegistraME &mdash; Desarrollo de Soluciones en la Nube &nbsp;|&nbsp;
+                Emitido el ${fechaEmision}
+            </div>
+        </div>
+    `;
+
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '750px';
+    container.style.background = '#fff';
+    container.style.zIndex = '99999';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    // Capa opaca que cubre toda la pantalla para que el usuario no vea
+    // el contenedor mientras se genera el PDF (pero el navegador SÍ
+    // le calcula tamaño real, a diferencia de esconderlo con top:-9999px)
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = '#0f172a';
+    overlay.style.zIndex = '99998';
+    overlay.innerHTML = '<p style="color:#fff; text-align:center; margin-top:45vh; font-family:Arial;">Generando PDF...</p>';
+    document.body.appendChild(overlay);
+
     const opt = {
-        margin: 0.5,
-        filename: 'Lista_Clase.pdf',
+        margin: 0.4,
+        filename: `Lista_Clase_${titulo}`.replace(/[^a-zA-Z0-9_-]/g, '_') + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, backgroundColor: '#1e293b' },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    html2pdf().set(opt).from(element).save();
+
+    // Proceso explícito paso a paso: solo eliminamos el contenedor
+    // DESPUÉS de que el PDF ya fue generado y guardado por completo.
+    setTimeout(() => {
+        html2pdf().set(opt).from(container).toPdf().get('pdf').then((pdfObj) => {
+            pdfObj.save(opt.filename);
+        }).then(() => {
+            document.body.removeChild(container);
+            document.body.removeChild(overlay);
+        }).catch((err) => {
+            console.error("Error generando PDF:", err);
+            uiAlert("❌ Error", "No se pudo generar el PDF: " + err.message, "error");
+            document.body.removeChild(container);
+            document.body.removeChild(overlay);
+        });
+    }, 300);
 }
 
 // --- FUNCIÓN PARA VER PERFIL RÁPIDO DESDE LA LISTA DE CLASE ---
@@ -4963,6 +5096,9 @@ function actualizarEstadoFila(select) {
 }
 
 // --- GUARDAR ---
+// =========================================================
+// REEMPLAZO COMPLETO de guardarNotasAPI (agrega el flujo de PDF)
+// =========================================================
 async function guardarNotasAPI() {
     const filas = document.querySelectorAll('.fila-nota');
     const notasParaGuardar = [];
@@ -5001,14 +5137,149 @@ async function guardarNotasAPI() {
     };
 
     uiAlert("Guardando...", "Procesando notas...", "info"); // Simple feedback
-    
+
     const res = await conectarAPI('guardarNotas', payload);
-    
+
     if (res.success) {
         uiAlert("✅ Guardado", res.message, "success");
+
+        // 👇 NUEVO: preguntar si necesita el PDF físico del acta
+        const quierePDF = await uiConfirm(
+            "📄 Reporte Físico",
+            "¿Necesita descargar el Acta de Concentrados en PDF para entregar a Dirección?"
+        );
+
+        if (quierePDF) {
+            generarPDFActaConcentrados(docente, seccion, materia);
+        }
+
     } else {
         uiAlert("❌ Error", res.message, "error");
     }
+}
+
+// =========================================================
+// NUEVA FUNCIÓN: Generar PDF del Acta de Concentrados
+// =========================================================
+function generarPDFActaConcentrados(docente, seccion, materia) {
+    // 1. Recolectar datos directamente de la tabla ya renderizada en pantalla
+    const filas = document.querySelectorAll('.fila-nota');
+    if (filas.length === 0) {
+        uiAlert("❌ Error", "No hay estudiantes en la tabla para generar el reporte.", "error");
+        return;
+    }
+
+    const filasHtml = [];
+    filas.forEach((tr, index) => {
+        const nombre = tr.children[1]?.textContent.trim() || "";
+        const cedula = tr.children[2]?.textContent.trim() || "";
+        const condicionSel = tr.querySelector('.input-condicion');
+        const condicion = condicionSel ? condicionSel.options[condicionSel.selectedIndex].text : "";
+        const nota = tr.querySelector('.input-nota')?.value || "";
+        const conv1 = tr.querySelector('.input-conv1')?.value || "";
+        const conv2 = tr.querySelector('.input-conv2')?.value || "";
+        const final = tr.querySelector('.input-final')?.value || "";
+
+        filasHtml.push(`
+            <tr>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px;">${index + 1}</td>
+                <td style="border:1px solid #999; padding:3px; font-size:8.5px;">${nombre}</td>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px;">${cedula}</td>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px;">${condicion}</td>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px;">${nota}</td>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px;">${conv1}</td>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px;">${conv2}</td>
+                <td style="border:1px solid #999; padding:3px; text-align:center; font-size:8.5px; font-weight:bold;">${final}</td>
+            </tr>
+        `);
+    });
+
+    const fechaEmision = new Date().toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const horaEmision = new Date().toLocaleTimeString('es-CR');
+
+    // 2. Construir el HTML completo del acta
+    const html = `
+        <div style="font-family: Arial, sans-serif; color:#000; padding: 10px; width: 100%;">
+            <div style="text-align:center; margin-bottom: 15px;">
+                <h2 style="margin:0; font-size:16px;">ACTA DE CONCENTRADOS DE CALIFICACIONES</h2>
+                <p style="margin:2px 0; font-size:12px;">Sistema de Gestión Académica - SIGA</p>
+            </div>
+
+            <table style="width:100%; font-size:11px; margin-bottom:12px;">
+                <tr>
+                    <td style="padding:2px 0;"><strong>Docente Responsable:</strong> ${docente}</td>
+                    <td style="padding:2px 0;"><strong>Sección:</strong> ${seccion}</td>
+                </tr>
+                <tr>
+                    <td style="padding:2px 0;"><strong>Materia:</strong> ${materia}</td>
+                    <td style="padding:2px 0;"><strong>Total de estudiantes:</strong> ${filas.length}</td>
+                </tr>
+            </table>
+
+            <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                    <tr style="background:#222; color:#fff;">
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">#</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Nombre del Estudiante</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Cédula</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Condición</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Nota</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Conv. 1</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Conv. 2</th>
+                        <th style="border:1px solid #999; padding:3px; font-size:8.5px;">Estado Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filasHtml.join('')}
+                </tbody>
+            </table>
+
+            <table style="width:100%; margin-top: 50px; font-size:11px;">
+                <tr>
+                    <td style="width:50%; text-align:center;">
+                        <div style="border-top:1px solid #000; width:80%; margin:0 auto; padding-top:5px;">
+                            Firma del Docente<br>${docente}
+                        </div>
+                    </td>
+                    <td style="width:50%; text-align:center;">
+                        <div style="border-top:1px solid #000; width:80%; margin:0 auto; padding-top:5px;">
+                            Firma de quien recibe<br>(Dirección)
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 9px; color: #555; text-align:center;">
+                Reporte generado por RegistraME &mdash; Desarrollo de Soluciones en la Nube &nbsp;|&nbsp;
+                Emitido el ${fechaEmision} a las ${horaEmision}
+            </div>
+        </div>
+    `;
+
+    // 3. Crear contenedor temporal fuera de pantalla (mismo patrón que el resto del sistema)
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '-9999px';
+    container.style.left = '-9999px';
+    container.style.width = '750px';
+    container.style.background = '#fff';
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    // 4. Generar el PDF
+    const nombreArchivo = `Acta_Concentrados_${seccion}_${materia}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    const opt = {
+        margin:       0.4,
+        filename:     `${nombreArchivo}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(container).save().then(() => {
+        document.body.removeChild(container);
+    });
 }
 
 document.addEventListener('contextmenu', event => event.preventDefault()); // Bloquea Clic Derecho
@@ -5651,6 +5922,51 @@ document.addEventListener('keydown', function(e) {
         cerrarModalConvalidaciones();
     }
 });
+
+//NUEVA FUNCIÓN JS: Ver datos del encargado (solo lectura)
+async function verEncargadoRapido(cedula) {
+    openModal('modal-ver-encargado');
+
+    const contenedor = document.getElementById('contenido-ver-encargado');
+    contenedor.innerHTML = '<p class="text-gray-400 text-center">Cargando...</p>';
+
+    const res = await conectarAPI('buscarEstudiante', { cedula: cedula, usuarioActivo: currentUser.email });
+
+    if (!res.success || res.multiple) {
+        contenedor.innerHTML = '<p class="text-red-400 text-center">No se pudo cargar la información del encargado.</p>';
+        return;
+    }
+
+    const e = res.encargado || [];
+    const nombreEstudiante = res.personal ? res.personal[1] : '';
+
+    contenedor.innerHTML = `
+        <p class="text-xs text-gray-400 -mb-2">Estudiante: <span class="text-gray-200 font-bold">${nombreEstudiante || '—'}</span></p>
+
+        <div class="bg-orange-500/10 p-4 rounded-xl border border-orange-500/20">
+            <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Nombre Completo del Encargado</label>
+            <p class="text-white font-semibold">${e[0] || '—'}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Cédula Encargado</label>
+                <p class="text-white font-semibold">${e[1] || '—'}</p>
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Parentesco</label>
+                <p class="text-white font-semibold">${e[2] || '—'}</p>
+            </div>
+        </div>
+
+        <div>
+            <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Teléfono de Contacto</label>
+            <p class="text-white font-semibold text-lg">
+                <a href="tel:${e[3] || ''}" class="text-blue-300 hover:text-blue-200">${e[3] || '—'}</a>
+            </p>
+        </div>
+    `;
+}
 
 </script>
 
