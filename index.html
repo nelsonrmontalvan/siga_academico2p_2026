@@ -4695,14 +4695,20 @@ function imprimirListaClase() {
         </div>
     `;
 
+    // Wrapper en el flujo NORMAL del documento (no fixed/absolute), pero
+    // con altura 0 y overflow hidden para que no se vea ni empuje el layout.
+    // html2canvas funciona más confiablemente con elementos en flujo normal.
+    const wrapper = document.createElement('div');
+    wrapper.style.height = '0';
+    wrapper.style.overflow = 'hidden';
+
     const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.top = '0';
-    container.style.left = '0';
     container.style.width = '750px';
     container.style.background = '#fff';
     container.innerHTML = html;
-    document.body.appendChild(container);
+
+    wrapper.appendChild(container);
+    document.body.appendChild(wrapper);
 
     // 🔍 DIAGNÓSTICO: revisemos en consola qué tamaño tiene el contenedor
     console.log("📏 Contenedor creado. offsetWidth:", container.offsetWidth, "offsetHeight:", container.offsetHeight);
@@ -4715,8 +4721,6 @@ function imprimirListaClase() {
             scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff',
-            // Le decimos a html2canvas que NO intente capturar el resto del documento,
-            // solo el contenedor que le pasamos explícitamente
             windowWidth: container.scrollWidth,
             windowHeight: container.scrollHeight
         },
@@ -4727,11 +4731,11 @@ function imprimirListaClase() {
 
     html2pdf().set(opt).from(container).save().then(() => {
         console.log("✅ PDF guardado.");
-        document.body.removeChild(container);
+        document.body.removeChild(wrapper);
     }).catch((err) => {
         console.error("❌ Error generando PDF:", err);
         uiAlert("❌ Error", "No se pudo generar el PDF: " + err.message, "error");
-        document.body.removeChild(container);
+        document.body.removeChild(wrapper);
     });
 }
 
