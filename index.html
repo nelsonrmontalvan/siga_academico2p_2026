@@ -4701,30 +4701,31 @@ function imprimirListaClase() {
     container.style.left = '0';
     container.style.width = '750px';
     container.style.background = '#fff';
-    container.style.zIndex = '99999';
     container.innerHTML = html;
     document.body.appendChild(container);
 
     // 🔍 DIAGNÓSTICO: revisemos en consola qué tamaño tiene el contenedor
     console.log("📏 Contenedor creado. offsetWidth:", container.offsetWidth, "offsetHeight:", container.offsetHeight);
-    console.log("📄 Contenido HTML (primeros 200 caracteres):", container.innerHTML.substring(0, 200));
 
     const opt = {
         margin: 0.4,
         filename: `Lista_Clase_${titulo}`.replace(/[^a-zA-Z0-9_-]/g, '_') + '.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: true },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            // Le decimos a html2canvas que NO intente capturar el resto del documento,
+            // solo el contenedor que le pasamos explícitamente
+            windowWidth: container.scrollWidth,
+            windowHeight: container.scrollHeight
+        },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
     console.log("🚀 Iniciando html2pdf...");
 
-    html2pdf().set(opt).from(container).toCanvas().then((canvas) => {
-        console.log("🖼️ Canvas generado. Ancho:", canvas.width, "Alto:", canvas.height);
-        // Si el canvas tiene tamaño 0 o casi 0, ahí está el problema confirmado
-    }).then(() => {
-        return html2pdf().set(opt).from(container).save();
-    }).then(() => {
+    html2pdf().set(opt).from(container).save().then(() => {
         console.log("✅ PDF guardado.");
         document.body.removeChild(container);
     }).catch((err) => {
