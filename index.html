@@ -4623,7 +4623,8 @@ function renderizarTablaEstudiantes(lista, materia, seccion) {
 }
 
 // =========================================================
-// REEMPLAZO de imprimirListaClase() — PDF limpio en blanco y negro
+// =========================================================
+// IMPRIMIR LISTA DE CLASE — ventana de impresión limpia
 // =========================================================
 function imprimirListaClase() {
     const titulo = document.getElementById('titulo-lista-res')?.textContent || "Lista de Clase";
@@ -4637,106 +4638,73 @@ function imprimirListaClase() {
 
     const filasHtml = [];
     filas.forEach((tr) => {
-        // Si es la fila de "No hay estudiantes matriculados", la saltamos
         if (tr.children.length < 7) return;
-
-        const numero = tr.children[0]?.textContent.trim() || "";
-        const id = tr.children[1]?.textContent.trim() || "";
-        const nombre = tr.children[2]?.textContent.trim() || "";
-        const fechaMat = tr.children[3]?.textContent.trim() || "";
-        const condicion = tr.children[4]?.textContent.trim() || "";
-        const edad = tr.children[5]?.textContent.trim() || "";
-        const telefonos = tr.children[6]?.textContent.trim() || "";
-
+        const celdas = [0,1,2,3,4,5,6].map(i => tr.children[i]?.textContent.trim() || "");
+        const [numero, id, nombre, fechaMat, condicion, edad, telefonos] = celdas;
         filasHtml.push(`
             <tr>
-                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${numero}</td>
-                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${id}</td>
-                <td style="border:1px solid #999; padding:4px; font-size:9.5px;">${nombre}</td>
-                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${fechaMat}</td>
-                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${condicion}</td>
-                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9.5px;">${edad}</td>
-                <td style="border:1px solid #999; padding:4px; text-align:center; font-size:9px;">${telefonos}</td>
+                <td class="centro">${numero}</td>
+                <td class="centro">${id}</td>
+                <td>${nombre}</td>
+                <td class="centro">${fechaMat}</td>
+                <td class="centro">${condicion}</td>
+                <td class="centro">${edad}</td>
+                <td class="centro">${telefonos}</td>
             </tr>
         `);
     });
 
     const fechaEmision = new Date().toLocaleDateString('es-CR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-    const html = `
-        <div style="font-family: Arial, sans-serif; color:#000; padding: 10px; width: 100%;">
-            <div style="text-align:center; margin-bottom: 12px;">
-                <h2 style="margin:0; font-size:15px;">LISTADO DE ESTUDIANTES</h2>
-                <p style="margin:4px 0; font-size:11px;">${titulo}</p>
-                <p style="margin:0; font-size:10px; color:#555;">${conteo}</p>
-            </div>
-
-            <table style="width:100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background:#222; color:#fff;">
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">#</th>
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Identificación</th>
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Nombre Completo</th>
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">F. Matrícula</th>
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Condición</th>
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Edad</th>
-                        <th style="border:1px solid #999; padding:4px; font-size:9.5px;">Teléfonos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filasHtml.join('')}
-                </tbody>
-            </table>
-
-            <div style="margin-top: 25px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 9px; color: #555; text-align:center;">
-                Reporte generado por RegistraME &mdash; Desarrollo de Soluciones en la Nube &nbsp;|&nbsp;
-                Emitido el ${fechaEmision}
-            </div>
-        </div>
-    `;
-
-    // Wrapper en el flujo NORMAL del documento (no fixed/absolute), pero
-    // con altura 0 y overflow hidden para que no se vea ni empuje el layout.
-    // html2canvas funciona más confiablemente con elementos en flujo normal.
-    const wrapper = document.createElement('div');
-    wrapper.style.height = '0';
-    wrapper.style.overflow = 'hidden';
-
-    const container = document.createElement('div');
-    container.style.width = '750px';
-    container.style.background = '#fff';
-    container.innerHTML = html;
-
-    wrapper.appendChild(container);
-    document.body.appendChild(wrapper);
-
-    // 🔍 DIAGNÓSTICO: revisemos en consola qué tamaño tiene el contenedor
-    console.log("📏 Contenedor creado. offsetWidth:", container.offsetWidth, "offsetHeight:", container.offsetHeight);
-
-    const opt = {
-        margin: 0.4,
-        filename: `Lista_Clase_${titulo}`.replace(/[^a-zA-Z0-9_-]/g, '_') + '.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            windowWidth: container.scrollWidth,
-            windowHeight: container.scrollHeight
-        },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    console.log("🚀 Iniciando html2pdf...");
-
-    html2pdf().set(opt).from(container).save().then(() => {
-        console.log("✅ PDF guardado.");
-        document.body.removeChild(wrapper);
-    }).catch((err) => {
-        console.error("❌ Error generando PDF:", err);
-        uiAlert("❌ Error", "No se pudo generar el PDF: " + err.message, "error");
-        document.body.removeChild(wrapper);
-    });
+    const ventana = window.open('', '_blank');
+    ventana.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Clase</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; color: #000; font-size: 10px; padding: 20px; }
+        h2 { font-size: 14px; text-align: center; margin-bottom: 4px; text-transform: uppercase; }
+        .subtitulo { text-align: center; font-size: 11px; margin-bottom: 2px; }
+        .conteo { text-align: center; font-size: 9px; color: #555; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+        thead tr { background: #222; color: #fff; }
+        th, td { border: 1px solid #aaa; padding: 4px 5px; font-size: 9.5px; }
+        th { text-align: center; font-size: 9px; }
+        td.centro { text-align: center; }
+        .pie { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 6px; font-size: 8.5px; color: #666; text-align: center; }
+        @media print {
+            body { padding: 10px; }
+            @page { size: letter portrait; margin: 1cm; }
+        }
+    </style>
+</head>
+<body>
+    <h2>Listado de Estudiantes II Periodo</h2>
+    <p class="subtitulo">${titulo}</p>
+    <p class="conteo">${conteo}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Identificación</th>
+                <th>Nombre Completo</th>
+                <th>F. Matrícula</th>
+                <th>Condición</th>
+                <th>Edad</th>
+                <th>Teléfonos</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${filasHtml.join('')}
+        </tbody>
+    </table>
+    <div class="pie">Reporte generado por RegistraME &mdash; Desarrollo de Soluciones en la Nube &nbsp;|&nbsp; Emitido el ${fechaEmision}</div>
+    <script>window.onload = function() { window.print(); };<\/script>
+</body>
+</html>`);
+    ventana.document.close();
 }
 
 // --- FUNCIÓN PARA VER PERFIL RÁPIDO DESDE LA LISTA DE CLASE ---
@@ -5251,30 +5219,42 @@ function generarPDFActaConcentrados(docente, seccion, materia) {
         </div>
     `;
 
-    // 3. Crear contenedor temporal fuera de pantalla (mismo patrón que el resto del sistema)
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.top = '-9999px';
-    container.style.left = '-9999px';
-    container.style.width = '750px';
-    container.style.background = '#fff';
-    container.innerHTML = html;
-    document.body.appendChild(container);
-
-    // 4. Generar el PDF
-    const nombreArchivo = `Acta_Concentrados_${seccion}_${materia}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-
-    const opt = {
-        margin:       0.4,
-        filename:     `${nombreArchivo}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(container).save().then(() => {
-        document.body.removeChild(container);
-    });
+    // 3. Abrir ventana de impresión limpia
+    const ventana = window.open('', '_blank');
+    ventana.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acta de Concentrados</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; color: #000; font-size: 10px; padding: 20px; }
+        h2 { font-size: 14px; text-align: center; margin-bottom: 4px; text-transform: uppercase; }
+        .subtitulo { text-align: center; font-size: 10px; color: #444; margin-bottom: 14px; }
+        .info-table { width: 100%; font-size: 10px; margin-bottom: 12px; }
+        .info-table td { padding: 2px 0; }
+        table.acta { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        thead tr { background: #222; color: #fff; }
+        th, td { border: 1px solid #aaa; padding: 3px 5px; font-size: 9px; }
+        th { text-align: center; }
+        td.centro { text-align: center; }
+        td.negrita { text-align: center; font-weight: bold; }
+        .firmas { width: 100%; margin-top: 50px; font-size: 10px; }
+        .firmas td { width: 50%; text-align: center; }
+        .linea-firma { border-top: 1px solid #000; width: 80%; margin: 0 auto; padding-top: 5px; }
+        .pie { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 6px; font-size: 8.5px; color: #666; text-align: center; }
+        @media print {
+            body { padding: 10px; }
+            @page { size: letter portrait; margin: 1cm; }
+        }
+    </style>
+</head>
+<body>
+    ${html}
+    <script>window.onload = function() { window.print(); };<\/script>
+</body>
+</html>`);
+    ventana.document.close();
 }
 
 document.addEventListener('contextmenu', event => event.preventDefault()); // Bloquea Clic Derecho
